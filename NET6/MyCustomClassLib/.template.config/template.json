@@ -3,18 +3,17 @@
 	"author": "Ed Wang",
 	"classifications": [
 		"Common",
-		"Worker",
-		"Web"
+		"Library"
 	],
-	"name": "My Worker Service",
-	"description": "Worker Service integrated with Serilog, Unified, Throw",
-	"identity": "MyCustomWorker.CSharp",
-	"shortName": "myworker",
+	"name": "My Class Library",
+	"description": "Class Library integrated with ConfigurationBinder, Unified, Throw",
+	"identity": "MyCustomClassLib.CSharp",
+	"shortName": "myclasslib",
 	"tags": {
 		"language": "C#",
 		"type": "project"
 	},
-	"sourceName": "MyCustomWorker",
+	"sourceName": "MyCustomClassLib",
 	"preferNameDirectory": true,
 	"placeholderFilename": ".predefinedfolder",
 	"symbols": {
@@ -27,7 +26,7 @@
 	},
 	"primaryOutputs": [
 		{
-			"path": "MyCustomWorker.csproj"
+			"path": "MyCustomClassLib.csproj"
 		}
 	],
 	"postActions": [
