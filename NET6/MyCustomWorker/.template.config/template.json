@@ -1,0 +1,20 @@
+{
+	"$schema": "http://json.schemastore.org/template",
+	"author": "Ed Wang",
+	"classifications": [
+		"Common",
+		"Worker",
+		"Web"
+	],
+	"name": "My Worker Service",
+	"description": "Worker Service integrated with Serilog, Unified, Throw",
+	"identity": "MyCustomWorker.CSharp",
+	"shortName": "myworker",
+	"tags": {
+		"language": "C#",
+		"type": "project"
+	},
+	"sourceName": "MyCustomWorker",
+	"preferNameDirectory": true,
+	"placeholderFilename": ".predefinedfolder"
+}
