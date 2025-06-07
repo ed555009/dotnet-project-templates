@@ -1,0 +1,22 @@
+{
+	"$schema": "http://json.schemastore.org/template",
+	"author": "Ed Wang",
+	"classifications": [
+		"Repository"
+	],
+	"name": "My Repository",
+	"description": "Repository",
+	"identity": "MyCustomRepo.Repo",
+	"shortName": "repo",
+	"sourceName": "MyCustomRepo",
+	"preferNameDirectory": true,
+	"placeholderFilename": ".predefinedfolder",
+	"symbols": {
+		"skipRestore": {
+			"type": "parameter",
+			"datatype": "bool",
+			"description": "If specified, skips the automatic restore of the project on create.",
+			"defaultValue": "false"
+		}
+	}
+}
