@@ -13,7 +13,7 @@ try
 	Log.Logger = new LoggerConfiguration()
 		.ReadFrom.Configuration(builder.Configuration)
 		.WriteTo.Async(env.IsDevelopment() ? x => x.Console() : x => x.Console(new ElasticsearchJsonFormatter()))
-		.Enrich.WithProperty("Assembly", Assembly.GetExecutingAssembly().FullName)
+		.Enrich.WithProperty("Assembly", Assembly.GetExecutingAssembly())
 		.CreateLogger();
 
 	_ = builder.Logging.ClearProviders();
