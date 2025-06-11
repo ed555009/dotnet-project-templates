@@ -1,0 +1,48 @@
+{
+	"$schema": "http://json.schemastore.org/template",
+	"author": "Ed Wang",
+	"classifications": [
+		"Web",
+		"WebApi",
+		"Web Api",
+		"Api",
+		"Service"
+	],
+	"name": "My WebApi (Controllers)",
+	"description": "Pre-structured WebApi project with Controllers",
+	"identity": "MyWebApi.CSharp",
+	"shortName": "myapi",
+	"tags": {
+		"language": "C#",
+		"type": "project"
+	},
+	"sourceName": "MyWebApi",
+	"preferNameDirectory": true,
+	"placeholderFilename": ".predefinedfolder",
+	"symbols": {
+		"skipRestore": {
+			"type": "parameter",
+			"datatype": "bool",
+			"description": "If specified, skips the automatic restore of the project on create.",
+			"defaultValue": "false"
+		}
+	},
+	"primaryOutputs": [
+		{
+			"path": "MyWebApi.csproj"
+		}
+	],
+	"postActions": [
+		{
+			"condition": "(!skipRestore)",
+			"description": "Restore NuGet packages required by this project.",
+			"manualInstructions": [
+				{
+					"text": "Running 'dotnet restore'"
+				}
+			],
+			"actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+			"continueOnError": true
+		}
+	]
+}
