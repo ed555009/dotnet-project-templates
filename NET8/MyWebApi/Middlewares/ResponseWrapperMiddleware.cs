@@ -59,40 +59,68 @@ public class ResponseWrapperMiddleware(RequestDelegate next, ILogger<ResponseWra
 				data = responseBody;
 			}
 
-			if (context.Response.StatusCode > 400)
+			var result = new ApiResultModel<object>
 			{
-				var problem = new ProblemDetailsModel
-				{
-					Type = "https://httpstatuses.com/" + context.Response.StatusCode,
-					Title = nameof(context.Response.StatusCode),
-					Status = context.Response.StatusCode,
-					Detail = "Request processed successfully.",
-					Instance = $"{context.Request.Method} {context.Request.Path}",
-					RequestId = context.TraceIdentifier,
-					TraceId = Activity.Current?.Id,
-				};
+				Success = context.Response.StatusCode >= 200 && context.Response.StatusCode < 300,
+				Data = context.Response.StatusCode < 300 ? data : null,
+				RequestId = context.TraceIdentifier,
+				TraceId = Activity.Current?.Id,
+			};
 
-				context.Response.ContentType = "application/problem+json";
+			await context.Response.WriteAsJsonAsync(result, _jsonSerializerOptions);
 
-				await context.Response.WriteAsJsonAsync(problem, _jsonSerializerOptions);
-			}
-			else
-			{
-				var result = new ApiResultModel<object>
-				{
-					Success = context.Response.StatusCode >= 200 && context.Response.StatusCode < 300,
-					Data = data,
-					RequestId = context.TraceIdentifier,
-					TraceId = Activity.Current?.Id,
-				};
+			// if (context.Response.StatusCode >= 400)
+			// {
+			// 	var problem = new ProblemDetailsModel
+			// 	{
+			// 		Type = "https://httpstatuses.com/" + context.Response.StatusCode,
+			// 		Title = nameof(context.Response.StatusCode),
+			// 		Status = context.Response.StatusCode,
+			// 		Detail = "Request processed successfully.",
+			// 		Instance = $"{context.Request.Method} {context.Request.Path}",
+			// 		RequestId = context.TraceIdentifier,
+			// 		TraceId = Activity.Current?.Id,
+			// 	};
 
-				await context.Response.WriteAsJsonAsync(result, _jsonSerializerOptions);
-			}
+			// 	context.Response.ContentType = "application/problem+json";
+
+			// 	await context.Response.WriteAsJsonAsync(problem, _jsonSerializerOptions);
+			// }
+			// else
+			// {
+			// 	var result = new ApiResultModel<object>
+			// 	{
+			// 		Success = context.Response.StatusCode >= 200 && context.Response.StatusCode < 300,
+			// 		Data = data,
+			// 		RequestId = context.TraceIdentifier,
+			// 		TraceId = Activity.Current?.Id,
+			// 	};
+
+			// 	await context.Response.WriteAsJsonAsync(result, _jsonSerializerOptions);
+			// }
 		}
-		catch
+		catch (Exception ex)
 		{
+			_logger.LogError("Exception occurred. Exception: {Exception}", ex);
+
+			var result = new ApiResultModel<object>
+			{
+				Success = false,
+				Data = null,
+				Message =
+					$"{ex.Message}{(!string.IsNullOrEmpty(ex.InnerException?.Message) ? $" {ex.InnerException.Message}" : string.Empty)}",
+				RequestId = context.TraceIdentifier,
+				TraceId = Activity.Current?.Id,
+			};
 			context.Response.Body = originalBodyStream;
-			throw;
+			context.Response.ContentType = "application/json";
+			context.Response.StatusCode = DetermineStatusCode(ex);
+
+			await context.Response.WriteAsJsonAsync(result, _jsonSerializerOptions);
+		}
+		finally
+		{
+			await context.Response.Body.FlushAsync();
 		}
 	}
 
@@ -100,5 +128,18 @@ public class ResponseWrapperMiddleware(RequestDelegate next, ILogger<ResponseWra
 	{
 		return response.ContentType != null
 			&& response.ContentType.Contains("application/json", StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static int DetermineStatusCode(Exception ex)
+	{
+		return ex switch
+		{
+			ArgumentException => StatusCodes.Status400BadRequest,
+			OperationCanceledException => StatusCodes.Status400BadRequest,
+			UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
+			NotSupportedException => StatusCodes.Status405MethodNotAllowed,
+			KeyNotFoundException => StatusCodes.Status404NotFound,
+			_ => StatusCodes.Status500InternalServerError,
+		};
 	}
 }

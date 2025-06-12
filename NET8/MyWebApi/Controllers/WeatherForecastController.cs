@@ -44,6 +44,6 @@ public class WeatherForecastController(ILogger<WeatherForecastController> logger
 	[HttpPost]
 	public WeatherForecast Create(CancellationToken cancellationToken)
 	{
-		throw new ArgumentException("Invalid argument.");
+		throw new KeyNotFoundException();
 	}
 }

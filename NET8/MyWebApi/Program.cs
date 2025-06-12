@@ -63,7 +63,7 @@ try
 	var app = builder.Build();
 
 	// global exception handler
-	app.UseMiddleware<ExceptionHandlingMiddleware>();
+	// app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 	// global response wrapper
 	app.UseMiddleware<ResponseWrapperMiddleware>();
