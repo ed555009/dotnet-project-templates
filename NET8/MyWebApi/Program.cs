@@ -56,9 +56,15 @@ try
 	// 	};
 	// });
 
-	// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-	builder.Services.AddEndpointsApiExplorer();
-	builder.Services.AddSwaggerGen();
+	if (!env.IsProduction())
+	{
+		// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+		_ = services.AddEndpointsApiExplorer();
+		_ = services.AddSwaggerGen();
+	}
+
+	// health check
+	services.AddHealthChecks();
 
 	var app = builder.Build();
 
@@ -69,7 +75,7 @@ try
 	app.UseMiddleware<ResponseWrapperMiddleware>();
 
 	// Configure the HTTP request pipeline.
-	if (app.Environment.IsDevelopment())
+	if (!env.IsProduction())
 	{
 		app.UseSwagger();
 		app.UseSwaggerUI();
@@ -80,6 +86,7 @@ try
 	app.UseAuthorization();
 
 	app.MapControllers();
+	app.MapHealthChecks("/health");
 
 	app.Run();
 }

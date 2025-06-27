@@ -7,6 +7,9 @@ namespace MyWebApi.Controllers;
 [Route("[controller]")]
 [ProducesResponseType(typeof(ApiResultModel<IEnumerable<WeatherForecast>>), 200)]
 [ProducesResponseType(typeof(ProblemDetailsModel), 400)]
+[ProducesResponseType(typeof(ProblemDetailsModel), 401)]
+[ProducesResponseType(typeof(ProblemDetailsModel), 403)]
+[ProducesResponseType(typeof(ProblemDetailsModel), 404)]
 [ProducesResponseType(typeof(ProblemDetailsModel), 405)]
 [ProducesResponseType(typeof(ProblemDetailsModel), 500)]
 public class WeatherForecastController(ILogger<WeatherForecastController> logger) : ControllerBase
@@ -45,5 +48,17 @@ public class WeatherForecastController(ILogger<WeatherForecastController> logger
 	public WeatherForecast Create(CancellationToken cancellationToken)
 	{
 		throw new KeyNotFoundException();
+	}
+
+	[HttpPut]
+	public WeatherForecast Update(CancellationToken cancellationToken)
+	{
+		throw new NotImplementedException();
+	}
+
+	[HttpDelete]
+	public WeatherForecast Delete(CancellationToken cancellationToken)
+	{
+		throw new UnauthorizedAccessException();
 	}
 }

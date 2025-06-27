@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.WebUtilities;
 using MyWebApi.Models.Responses;
 
 namespace MyWebApi.Middlewares;
@@ -59,64 +60,64 @@ public class ResponseWrapperMiddleware(RequestDelegate next, ILogger<ResponseWra
 				data = responseBody;
 			}
 
-			var result = new ApiResultModel<object>
+			if (context.Response.StatusCode < 400)
 			{
-				Success = context.Response.StatusCode >= 200 && context.Response.StatusCode < 300,
-				Data = context.Response.StatusCode < 300 ? data : null,
-				RequestId = context.TraceIdentifier,
-				TraceId = Activity.Current?.Id,
-			};
+				var result = new ApiResultModel<object>
+				{
+					Success = context.Response.StatusCode >= 200 && context.Response.StatusCode < 300,
+					Data = context.Response.StatusCode < 300 ? data : null,
+					RequestId = context.TraceIdentifier,
+					TraceId = Activity.Current?.Id,
+				};
 
-			await context.Response.WriteAsJsonAsync(result, _jsonSerializerOptions);
+				await context.Response.WriteAsJsonAsync(result, _jsonSerializerOptions);
+			}
+			else
+			{
+				var problemDetail = new ProblemDetailsModel
+				{
+					Type =
+						$"https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/{context.Response.StatusCode}",
+					Title = ReasonPhrases.GetReasonPhrase(context.Response.StatusCode) ?? "Unknown Error",
+					Status = context.Response.StatusCode,
+					Detail = string.Empty,
+					Instance = $"{context.Request.Method} {context.Request.Path}",
+					RequestId = context.TraceIdentifier,
+					TraceId = Activity.Current?.Id,
+				};
+				context.Response.Body = originalBodyStream;
 
-			// if (context.Response.StatusCode >= 400)
-			// {
-			// 	var problem = new ProblemDetailsModel
-			// 	{
-			// 		Type = "https://httpstatuses.com/" + context.Response.StatusCode,
-			// 		Title = nameof(context.Response.StatusCode),
-			// 		Status = context.Response.StatusCode,
-			// 		Detail = "Request processed successfully.",
-			// 		Instance = $"{context.Request.Method} {context.Request.Path}",
-			// 		RequestId = context.TraceIdentifier,
-			// 		TraceId = Activity.Current?.Id,
-			// 	};
-
-			// 	context.Response.ContentType = "application/problem+json";
-
-			// 	await context.Response.WriteAsJsonAsync(problem, _jsonSerializerOptions);
-			// }
-			// else
-			// {
-			// 	var result = new ApiResultModel<object>
-			// 	{
-			// 		Success = context.Response.StatusCode >= 200 && context.Response.StatusCode < 300,
-			// 		Data = data,
-			// 		RequestId = context.TraceIdentifier,
-			// 		TraceId = Activity.Current?.Id,
-			// 	};
-
-			// 	await context.Response.WriteAsJsonAsync(result, _jsonSerializerOptions);
-			// }
+				await context.Response.WriteAsJsonAsync(
+					problemDetail,
+					_jsonSerializerOptions,
+					contentType: "application/problem+json; charset=utf-8"
+				);
+			}
 		}
 		catch (Exception ex)
 		{
 			_logger.LogError("Exception occurred. Exception: {Exception}", ex);
 
-			var result = new ApiResultModel<object>
+			var statusCode = DetermineStatusCode(ex);
+			var problemDetail = new ProblemDetailsModel
 			{
-				Success = false,
-				Data = null,
-				Message =
+				Type = $"https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/{statusCode}",
+				Title = ReasonPhrases.GetReasonPhrase(statusCode) ?? "Unknown Error",
+				Status = statusCode,
+				Detail =
 					$"{ex.Message}{(!string.IsNullOrEmpty(ex.InnerException?.Message) ? $" {ex.InnerException.Message}" : string.Empty)}",
+				Instance = $"{context.Request.Method} {context.Request.Path}",
 				RequestId = context.TraceIdentifier,
 				TraceId = Activity.Current?.Id,
 			};
 			context.Response.Body = originalBodyStream;
-			context.Response.ContentType = "application/json";
-			context.Response.StatusCode = DetermineStatusCode(ex);
+			context.Response.StatusCode = statusCode;
 
-			await context.Response.WriteAsJsonAsync(result, _jsonSerializerOptions);
+			await context.Response.WriteAsJsonAsync(
+				problemDetail,
+				_jsonSerializerOptions,
+				contentType: "application/problem+json; charset=utf-8"
+			);
 		}
 		finally
 		{
