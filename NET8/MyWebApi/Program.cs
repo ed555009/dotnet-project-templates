@@ -2,6 +2,9 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
+using MyWebApi.Extensions;
 using MyWebApi.Middlewares;
 using Serilog;
 using Serilog.Formatting.Elasticsearch;
@@ -60,7 +63,25 @@ try
 	{
 		// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 		_ = services.AddEndpointsApiExplorer();
-		_ = services.AddSwaggerGen();
+		_ = services.AddSwaggerGen(options =>
+		{
+			options.MapType<DateOnly>(() =>
+				new OpenApiSchema
+				{
+					Type = "string",
+					Format = "date",
+					Example = new OpenApiString(DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd")),
+				}
+			);
+			options.MapType<TimeOnly>(() =>
+				new OpenApiSchema
+				{
+					Type = "string",
+					Format = "time",
+					Example = new OpenApiString(TimeOnly.FromDateTime(DateTime.Now).ToString("HH:mm:ss")),
+				}
+			);
+		});
 	}
 
 	// health check
@@ -68,25 +89,48 @@ try
 
 	var app = builder.Build();
 
+	_ = app.UseMiddleware<RequestBodyLoggingMiddleware>();
+	_ = app.UseSerilogRequestLogging(options =>
+	{
+		options.MessageTemplate =
+			"{User} from {RemoteIpAddress} {RequestScheme} {RequestHost} {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+		options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+		{
+			string user = httpContext.User.Identity?.Name ?? "Anonymous";
+
+			diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+			diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme.ToUpper());
+			diagnosticContext.Set("RemoteIpAddress", httpContext.ClientIP().ToString());
+			diagnosticContext.Set("User", user);
+			diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent);
+			diagnosticContext.Set("RequestHeaderAuthorization", httpContext.Request.Headers.Authorization);
+			diagnosticContext.Set("ResponseContentType", httpContext.Response.ContentType);
+			diagnosticContext.Set("ResponseContentLength", httpContext.Response.ContentLength);
+
+			if (httpContext.Request.QueryString.HasValue)
+				diagnosticContext.Set("RequestQueryString", httpContext.Request.QueryString.Value);
+		};
+	});
+
 	// global exception handler
 	// app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 	// global response wrapper
-	app.UseMiddleware<ResponseWrapperMiddleware>();
+	_ = app.UseMiddleware<ResponseWrapperMiddleware>();
 
 	// Configure the HTTP request pipeline.
 	if (!env.IsProduction())
 	{
-		app.UseSwagger();
-		app.UseSwaggerUI();
+		_ = app.UseSwagger();
+		_ = app.UseSwaggerUI();
 	}
 
-	app.UseHttpsRedirection();
+	_ = app.UseHttpsRedirection();
 
-	app.UseAuthorization();
+	_ = app.UseAuthorization();
 
-	app.MapControllers();
-	app.MapHealthChecks("/health");
+	_ = app.MapControllers();
+	_ = app.MapHealthChecks("/health");
 
 	app.Run();
 }

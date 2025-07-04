@@ -96,7 +96,11 @@ public class ResponseWrapperMiddleware(RequestDelegate next, ILogger<ResponseWra
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError("Exception occurred. Exception: {Exception}", ex);
+			if (ex is OperationCanceledException || ex is TaskCanceledException)
+				// If the request was cancelled, we don't need to log it as an error.
+				_logger.LogInformation("Request was cancelled. RequestId: {RequestId}", context.TraceIdentifier);
+			else
+				_logger.LogError("Exception occurred. Exception: {Exception}", ex.Message);
 
 			var statusCode = DetermineStatusCode(ex);
 			var problemDetail = new ProblemDetailsModel
@@ -136,7 +140,7 @@ public class ResponseWrapperMiddleware(RequestDelegate next, ILogger<ResponseWra
 		return ex switch
 		{
 			ArgumentException => StatusCodes.Status400BadRequest,
-			OperationCanceledException => StatusCodes.Status400BadRequest,
+			OperationCanceledException => StatusCodes.Status499ClientClosedRequest,
 			UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
 			NotSupportedException => StatusCodes.Status405MethodNotAllowed,
 			KeyNotFoundException => StatusCodes.Status404NotFound,

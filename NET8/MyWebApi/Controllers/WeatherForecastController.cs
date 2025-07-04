@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MyWebApi.Models.Responses;
 
@@ -5,6 +6,7 @@ namespace MyWebApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Produces("application/json")]
 [ProducesResponseType(typeof(ApiResultModel<IEnumerable<WeatherForecast>>), 200)]
 [ProducesResponseType(typeof(ProblemDetailsModel), 400)]
 [ProducesResponseType(typeof(ProblemDetailsModel), 401)]
@@ -31,17 +33,20 @@ public class WeatherForecastController(ILogger<WeatherForecastController> logger
 	private readonly ILogger<WeatherForecastController> _logger = logger;
 
 	[HttpGet(Name = "GetWeatherForecast")]
-	public IEnumerable<WeatherForecast> Get()
+	public async Task<IEnumerable<WeatherForecast>> Get(CancellationToken cancellationToken)
 	{
-		return Enumerable
-			.Range(1, 5)
-			.Select(index => new WeatherForecast
-			{
-				Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-				TemperatureC = Random.Shared.Next(-20, 55),
-				Summary = _summaries[Random.Shared.Next(_summaries.Length)],
-			})
-			.ToArray();
+		await Task.Delay(3000, cancellationToken);
+		return
+		[
+			.. Enumerable
+				.Range(1, 5)
+				.Select(index => new WeatherForecast
+				{
+					Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+					TemperatureC = Random.Shared.Next(-20, 55),
+					Summary = _summaries[Random.Shared.Next(_summaries.Length)],
+				}),
+		];
 	}
 
 	[HttpPost]
