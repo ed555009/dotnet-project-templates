@@ -1,20 +1,11 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MyWebApi.Models.Responses;
 
 namespace MyWebApi.Controllers;
 
-[ApiController]
 [Route("[controller]")]
-[Produces("application/json")]
 [ProducesResponseType(typeof(ApiResultModel<IEnumerable<WeatherForecast>>), 200)]
-[ProducesResponseType(typeof(ProblemDetailsModel), 400)]
-[ProducesResponseType(typeof(ProblemDetailsModel), 401)]
-[ProducesResponseType(typeof(ProblemDetailsModel), 403)]
-[ProducesResponseType(typeof(ProblemDetailsModel), 404)]
-[ProducesResponseType(typeof(ProblemDetailsModel), 405)]
-[ProducesResponseType(typeof(ProblemDetailsModel), 500)]
-public class WeatherForecastController(ILogger<WeatherForecastController> logger) : ControllerBase
+public class WeatherForecastController(ILogger<WeatherForecastController> logger) : BaseController
 {
 	private static readonly string[] _summaries =
 	[
